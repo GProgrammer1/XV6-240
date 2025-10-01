@@ -70,6 +70,92 @@ ls(char *path)
   close(fd);
 }
 
+// Check if string contains wildcard characters
+int
+has_wildcard(char *str)
+{
+  while(*str) {
+    if(*str == '*' || *str == '?')
+      return 1;
+    str++;
+  }
+  return 0;
+}
+
+// List files matching pattern in directory
+void
+ls_wildcard(char *pattern)
+{
+  char buf[512], *p;
+  int fd;
+  struct dirent de;
+  struct stat st;
+  char *dir;
+  char *file_pattern;
+  int found = 0;
+  
+  // Extract directory and filename pattern
+  // For simplicity, assume pattern is in current directory
+  dir = ".";
+  file_pattern = pattern;
+  
+  // Check if pattern has a directory component
+  for(p = pattern + strlen(pattern); p >= pattern && *p != '/'; p--)
+    ;
+  
+  if(p > pattern) {
+    // Pattern has directory component
+    *p = '\0';
+    dir = pattern;
+    file_pattern = p + 1;
+  }
+  
+  if((fd = open(dir, 0)) < 0){
+    printf(2, "ls: cannot open %s\n", dir);
+    return;
+  }
+
+  if(fstat(fd, &st) < 0){
+    printf(2, "ls: cannot stat %s\n", dir);
+    close(fd);
+    return;
+  }
+
+  if(st.type != T_DIR){
+    printf(2, "ls: %s is not a directory\n", dir);
+    close(fd);
+    return;
+  }
+
+  strcpy(buf, dir);
+  p = buf + strlen(buf);
+  *p++ = '/';
+  
+  while(read(fd, &de, sizeof(de)) == sizeof(de)){
+    if(de.inum == 0)
+      continue;
+    
+    // Check if filename matches pattern
+    de.name[DIRSIZ] = 0; // Ensure null termination
+    if(wildcard_match(file_pattern, de.name)){
+      memmove(p, de.name, DIRSIZ);
+      p[DIRSIZ] = 0;
+      if(stat(buf, &st) < 0){
+        printf(1, "ls: cannot stat %s\n", buf);
+        continue;
+      }
+      printf(1, "%s %d %d %d\n", fmtname(buf), st.type, st.ino, st.size);
+      found = 1;
+    }
+  }
+  
+  if(!found) {
+    printf(2, "ls: no matches found for pattern '%s'\n", file_pattern);
+  }
+  
+  close(fd);
+}
+
 int
 main(int argc, char *argv[])
 {
@@ -79,7 +165,13 @@ main(int argc, char *argv[])
     ls(".");
     exit();
   }
-  for(i=1; i<argc; i++)
-    ls(argv[i]);
+  
+  for(i=1; i<argc; i++){
+    if(has_wildcard(argv[i])){
+      ls_wildcard(argv[i]);
+    } else {
+      ls(argv[i]);
+    }
+  }
   exit();
 }

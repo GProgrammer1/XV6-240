@@ -15,6 +15,47 @@ strcpy(char *s, const char *t)
   return os;
 }
 
+
+// Wildcard pattern matching
+// Supports * (matches zero or more characters)
+// Returns 1 if str matches pattern, 0 otherwise
+// In ulib.c - change the function name
+int
+wildcard_match(char *pattern, char *str)
+{
+  char *p = pattern;
+  char *s = str;
+  char *star = 0;
+  char *ss = 0;
+  
+  while(*s) {
+    if(*p == *s || *p == '?') {
+      p++;
+      s++;
+      continue;
+    }
+    
+    if(*p == '*') {
+      star = p++;
+      ss = s;
+      continue;
+    }
+    
+    if(star) {
+      p = star + 1;
+      s = ++ss;
+      continue;
+    }
+    
+    return 0;
+  }
+  
+  while(*p == '*')
+    p++;
+    
+  return *p == '\0';
+}
+
 int
 strcmp(const char *p, const char *q)
 {
