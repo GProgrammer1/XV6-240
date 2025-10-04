@@ -107,6 +107,8 @@ extern int sys_uptime(void);
 //added code. global function declaration
 extern int sys_authenticate(void);
 
+extern int sys_count(void);
+
 static int (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
 [SYS_exit]    sys_exit,
@@ -130,7 +132,10 @@ static int (*syscalls[])(void) = {
 [SYS_mkdir]   sys_mkdir,
 [SYS_close]   sys_close,
 [SYS_authenticate] sys_authenticate,
+[SYS_count]   sys_count,
 };
+
+extern int syscalls_count[NELEM(syscalls)];
 
 void
 syscall(void)
@@ -140,6 +145,7 @@ syscall(void)
 
   num = curproc->tf->eax;
   if(num > 0 && num < NELEM(syscalls) && syscalls[num]) {
+    syscalls_count[num - 1]++;
     curproc->tf->eax = syscalls[num]();
   } else {
     cprintf("%d %s: unknown sys call %d\n",
