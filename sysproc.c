@@ -7,6 +7,10 @@
 #include "mmu.h"
 #include "proc.h"
 #include "users.h"
+
+#define SYSCALLS_COUNT 23
+int syscalls_count[SYSCALLS_COUNT] = {0};
+
 int
 sys_fork(void)
 {
@@ -128,4 +132,21 @@ sys_authenticate(void)
     }
     
     return -1; // Authentication failed
+}
+
+int
+sys_count(void)
+{
+  int a;
+  if(argint(0, &a) > 0)
+  {
+    return syscalls_count[a - 1];
+  }
+
+  int total = 0;
+  for (unsigned i = 1; i <= SYSCALLS_COUNT; i++)
+  {
+    total += syscalls_count[i - 1];
+  }
+  return total;
 }
