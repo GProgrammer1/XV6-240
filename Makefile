@@ -173,7 +173,8 @@ UPROGS=\
 	_init\
 	_kill\
 	_ln\
-	 _login\
+	_login\
+	_count\
 	_ls\
 	_mkdir\
 	_rm\
