@@ -90,6 +90,8 @@ extern int sys_exit(void);
 extern int sys_fork(void);
 extern int sys_fstat(void);
 extern int sys_getpid(void);
+extern int sys_clone(void);
+extern int sys_join(void);
 extern int sys_kill(void);
 extern int sys_link(void);
 extern int sys_mkdir(void);
@@ -133,6 +135,8 @@ static int (*syscalls[])(void) = {
 [SYS_close]   sys_close,
 [SYS_authenticate] sys_authenticate,
 [SYS_count]   sys_count,
+[SYS_clone]   sys_clone,
+[SYS_join]    sys_join,
 };
 
 extern int syscalls_count[NELEM(syscalls)];

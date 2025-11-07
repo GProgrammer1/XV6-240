@@ -12,6 +12,18 @@
 #define BACK  5
 
 #define MAXARGS 10
+#define HISTORY_SIZE 16
+#define CMD_BUF 100
+
+static char history[HISTORY_SIZE][CMD_BUF];
+static int history_count;
+static int history_next;
+static int history_total;
+
+static void trimnewline(char *buf);
+static void addhistory(const char *cmd);
+static void showhistory(void);
+static int recallhistory(int index, char *buf, int nbuf);
 
 struct cmd {
   int type;
@@ -48,6 +60,71 @@ struct backcmd {
   int type;
   struct cmd *cmd;
 };
+
+static void
+trimnewline(char *buf)
+{
+  int len = strlen(buf);
+
+  while(len > 0 && (buf[len-1] == '\n' || buf[len-1] == '\r')){
+    buf[len-1] = 0;
+    len--;
+  }
+}
+
+static void
+addhistory(const char *cmd)
+{
+  int len;
+
+  if(cmd == 0 || cmd[0] == 0)
+    return;
+
+  len = strlen(cmd);
+  if(len >= CMD_BUF)
+    len = CMD_BUF - 1;
+  memmove(history[history_next], cmd, len);
+  history[history_next][len] = 0;
+
+  history_next = (history_next + 1) % HISTORY_SIZE;
+  if(history_count < HISTORY_SIZE)
+    history_count++;
+  history_total++;
+}
+
+static int
+recallhistory(int index, char *buf, int nbuf)
+{
+  int start, offset, idx, len;
+
+  if(history_count == 0)
+    return -1;
+
+  start = history_total - history_count + 1;
+  if(index < start || index > history_total)
+    return -1;
+
+  offset = index - start;
+  idx = (history_next + HISTORY_SIZE - history_count + offset) % HISTORY_SIZE;
+  len = strlen(history[idx]);
+  if(len >= nbuf)
+    len = nbuf - 1;
+  memmove(buf, history[idx], len);
+  buf[len] = 0;
+  return 0;
+}
+
+static void
+showhistory(void)
+{
+  int i, idx, start;
+
+  start = history_total - history_count + 1;
+  for(i = 0; i < history_count; i++){
+    idx = (history_next + HISTORY_SIZE - history_count + i) % HISTORY_SIZE;
+    printf(1, "%d %s\n", start + i, history[idx]);
+  }
+}
 
 int fork1(void);  // Fork but panics on failure.
 void panic(char*);
@@ -157,13 +234,40 @@ main(void)
 
   // Read and run input commands.
   while(getcmd(buf, sizeof(buf)) >= 0){
+    trimnewline(buf);
+
+    if(buf[0] == 0)
+      continue;
+
+    if(buf[0] == '!'){
+      if(buf[1] == '!' && buf[2] == 0){
+        if(recallhistory(history_total, buf, sizeof(buf)) < 0){
+          printf(2, "history: empty\n");
+          continue;
+        }
+      } else {
+        int num = atoi(buf+1);
+        if(num <= 0 || recallhistory(num, buf, sizeof(buf)) < 0){
+          printf(2, "history: invalid reference\n");
+          continue;
+        }
+      }
+      printf(1, "%s\n", buf);
+    }
+
+    addhistory(buf);
+
+    if(strcmp(buf, "history") == 0){
+      showhistory();
+      continue;
+    }
+
     if(buf[0] == 'c' && buf[1] == 'd' && buf[2] == ' '){
-      // Chdir must be called by the parent, not the child.
-      buf[strlen(buf)-1] = 0;  // chop \n
       if(chdir(buf+3) < 0)
         printf(2, "cannot cd %s\n", buf+3);
       continue;
     }
+
     if(fork1() == 0)
       runcmd(parsecmd(buf));
     wait();

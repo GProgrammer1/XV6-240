@@ -8,13 +8,24 @@
 #include "proc.h"
 #include "users.h"
 
-#define SYSCALLS_COUNT 23
+#define SYSCALLS_COUNT 25
 int syscalls_count[SYSCALLS_COUNT] = {0};
 
 int
 sys_fork(void)
 {
   return fork();
+}
+
+int
+sys_clone(void)
+{
+  int fn, arg, stack;
+
+  if(argint(0, &fn) < 0 || argint(1, &arg) < 0 || argint(2, &stack) < 0)
+    return -1;
+
+  return clone((void (*)(void*))fn, (void*)arg, (void*)stack);
 }
 
 int
@@ -28,6 +39,17 @@ int
 sys_wait(void)
 {
   return wait();
+}
+
+int
+sys_join(void)
+{
+  void **stack;
+
+  if(argptr(0, (char**)&stack, sizeof(void*)) < 0)
+    return -1;
+
+  return join(stack);
 }
 
 int

@@ -26,6 +26,8 @@ char* sbrk(int);
 int sleep(int);
 int uptime(void);
 int count(int call_number);
+int clone(void (*fn)(void*), void *arg, void *stack);
+int join(void **stack);
 
 // ulib.c
 int stat(const char*, struct stat*);

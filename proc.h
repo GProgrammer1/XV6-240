@@ -48,6 +48,10 @@ struct proc {
   int killed;                  // If non-zero, have been killed
   struct file *ofile[NOFILE];  // Open files
   struct inode *cwd;           // Current directory
+  int isthread;                // Indicates if this proc is a thread
+  void *ustack;                // User stack pointer passed to clone
+  struct proc *thread_master;  // Owning process for threads
+  int thread_refcount;         // Reference count for address space ownership
   char name[16];               // Process name (debugging)
 };
 

@@ -175,12 +175,14 @@ UPROGS=\
 	_ln\
 	_login\
 	_count\
+	_diff\
 	_ls\
 	_mkdir\
 	_rm\
 	_sh\
 	_stressfs\
 	_usertests\
+	_threadtest\
 	_wc\
 	_zombie\
 
