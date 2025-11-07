@@ -24,3 +24,6 @@
 #define SYS_count  23
 #define SYS_clone  24
 #define SYS_join   25
+#define SYS_initlock_t 26
+#define SYS_acquire_t 27
+#define SYS_release_t 28

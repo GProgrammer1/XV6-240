@@ -105,6 +105,9 @@ extern int sys_unlink(void);
 extern int sys_wait(void);
 extern int sys_write(void);
 extern int sys_uptime(void);
+extern int sys_initlock_t(void);
+extern int sys_acquire_t(void);
+extern int sys_release_t(void);
 
 //added code. global function declaration
 extern int sys_authenticate(void);
@@ -137,6 +140,9 @@ static int (*syscalls[])(void) = {
 [SYS_count]   sys_count,
 [SYS_clone]   sys_clone,
 [SYS_join]    sys_join,
+[SYS_initlock_t] sys_initlock_t,
+[SYS_acquire_t] sys_acquire_t,
+[SYS_release_t] sys_release_t
 };
 
 extern int syscalls_count[NELEM(syscalls)];

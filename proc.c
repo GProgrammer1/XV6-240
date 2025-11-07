@@ -6,6 +6,7 @@
 #include "x86.h"
 #include "proc.h"
 #include "spinlock.h"
+#include "ticketlock.h"
 
 struct {
   struct spinlock lock;
@@ -686,4 +687,38 @@ procdump(void)
     }
     cprintf("\n");
   }
+}
+
+// return whether the given ticketlock is held by this process.
+int holding_t(struct ticketlock *lk)
+{
+  return lk->proc == myproc()->pid && lk->turn != lk->ticket;
+}
+
+void initlock_t(struct ticketlock *lk)
+{
+  lk->proc = 0;
+  lk->ticket = 0;
+  lk->turn = 0;
+}
+
+void acquire_t(struct ticketlock *lk)
+{
+  if (holding_t(lk)) {
+    panic("Lock already aquired!");
+    return;
+  }
+  uint t = fetch_and_add(&lk->ticket, 1);
+  while (t != lk->turn);
+  lk->proc = myproc();
+}
+
+void release_t(struct ticketlock *lk)
+{
+  if (!holding_t(lk)){
+    panic("Lock already released");
+  }
+
+  lk->proc = 0;
+  lk->turn += 1;
 }

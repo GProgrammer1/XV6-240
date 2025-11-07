@@ -7,6 +7,7 @@
 #include "mmu.h"
 #include "proc.h"
 #include "users.h"
+#include "ticketlock.h"
 
 #define SYSCALLS_COUNT 25
 int syscalls_count[SYSCALLS_COUNT] = {0};
@@ -171,4 +172,40 @@ sys_count(void)
     total += syscalls_count[i - 1];
   }
   return total;
+}
+
+int sys_initlock_t(void)
+{
+  struct ticketlock *tl;
+  if (argptr(0, (char**)&tl, sizeof(struct ticketlock*)) < 0)
+  {
+    return -1;
+  }
+
+  initlock_t(tl);
+  return 0;
+}
+
+int sys_acquire_t(void)
+{
+  struct ticketlock *tl;
+  if (argptr(0, (char**)&tl, sizeof(struct ticketlock*)) < 0)
+  {
+    return -1;
+  }
+
+  acquire_t(tl);
+  return 0;
+}
+
+int sys_release_t(void)
+{
+  struct ticketlock *tl;
+  if (argptr(0, (char**)&tl, sizeof(struct ticketlock*)) < 0)
+  {
+    return -1;
+  }
+
+  release_t(tl);
+  return 0;
 }
