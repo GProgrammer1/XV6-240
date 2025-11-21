@@ -1,0 +1,124 @@
+#include "types.h"
+#include "stat.h"
+#include "user.h"
+#include "fcntl.h"
+
+#define MAXLINE 512
+
+// Read one line from fd into buf (terminated with '\0').
+// Returns number of bytes read (excluding '\0'). Sets *peof=1 if EOF before reading anything.
+static int readline(int fd, char *buf, int max, int *peof) {
+  int n = 0;
+  char c;
+  int r;
+
+  *peof = 0;
+  while (1) {
+    r = read(fd, &c, 1);
+    if (r == 0) { // EOF
+      if (n == 0) *peof = 1;
+      buf[n] = 0;
+      return n;
+    }
+    if (r < 0) {
+      if (n == 0) *peof = 1;
+      buf[n] = 0;
+      return n;
+    }
+    if (n < max - 1)
+      buf[n++] = c;
+    if (c == '\n')
+      break;
+  }
+  buf[n] = 0;
+  return n;
+}
+
+static int linecmp(char *a, char *b) {
+  // Strip trailing '\r' to handle CRLF if any
+  int la = strlen(a);
+  int lb = strlen(b);
+  if (la > 0 && a[la - 1] == '\r') a[--la] = 0;
+  if (lb > 0 && b[lb - 1] == '\r') b[--lb] = 0;
+  return strcmp(a, b);
+}
+
+static void usage(void) {
+  printf(2, "usage: diff file1 file2\n");
+}
+
+int main(int argc, char *argv[]) {
+  if (argc != 3) {
+    usage();
+    exit();
+  }
+
+  int fd1 = open(argv[1], O_RDONLY);
+  if (fd1 < 0) {
+    printf(2, "diff: cannot open %s\n", argv[1]);
+    exit();
+  }
+
+  int fd2 = open(argv[2], O_RDONLY);
+  if (fd2 < 0) {
+    printf(2, "diff: cannot open %s\n", argv[2]);
+    close(fd1);
+    exit();
+  }
+
+  char l1[MAXLINE], l2[MAXLINE];
+  int eof1 = 0, eof2 = 0;
+  int ln = 0;
+  int different = 0;
+
+  while (1) {
+    int e1 = 0, e2 = 0;
+    int n1 = readline(fd1, l1, MAXLINE, &e1);
+    int n2 = readline(fd2, l2, MAXLINE, &e2);
+
+    if (e1) eof1 = 1;
+    if (e2) eof2 = 1;
+    if (eof1 && eof2) break;
+    ln++;
+
+    if (eof1 && !eof2) {
+      different = 1;
+      printf(1, "Difference at line %d:\n", ln);
+      printf(1, "file1: <EOF>\nfile2: %s", l2);
+      while (!eof2) {
+        ln++;
+        int e = 0;
+        int n = readline(fd2, l2, MAXLINE, &e);
+        if (e) { eof2 = 1; break; }
+        printf(1, "file1: <EOF>\nfile2: %s", l2);
+      }
+      break;
+    }
+
+    if (eof2 && !eof1) {
+      different = 1;
+      printf(1, "Difference at line %d:\n", ln);
+      printf(1, "file1: %sfile2: <EOF>\n", l1);
+      while (!eof1) {
+        ln++;
+        int e = 0;
+        int n = readline(fd1, l1, MAXLINE, &e);
+        if (e) { eof1 = 1; break; }
+        printf(1, "file1: %sfile2: <EOF>\n", l1);
+      }
+      break;
+    }
+
+    if (linecmp(l1, l2) != 0) {
+      different = 1;
+      printf(1, "Difference at line %d:\n", ln);
+      printf(1, "file1: %sfile2: %s\n", l1, l2);
+    }
+  }
+
+  close(fd1);
+  close(fd2);
+  if (!different)
+    printf(1, "Files are identical.\n");
+  exit();
+}
