@@ -176,9 +176,11 @@ UPROGS=\
 	_login\
 	_count\
 	_diff\
+	_find\
 	_ls\
 	_mkdir\
 	_rm\
+	_search\
 	_sh\
 	_stressfs\
 	_usertests\
