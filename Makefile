@@ -186,6 +186,8 @@ UPROGS=\
 	_wc\
 	_zombie\
 	_tree\
+	_find\
+	_search\
 
 fs.img: mkfs README $(UPROGS)
 	./mkfs fs.img README $(UPROGS)
