@@ -188,6 +188,7 @@ UPROGS=\
 	_tree\
 	_find\
 	_search\
+	_split\
 
 fs.img: mkfs README $(UPROGS)
 	./mkfs fs.img README $(UPROGS)
